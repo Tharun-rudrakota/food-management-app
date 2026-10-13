@@ -5,10 +5,20 @@ from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash
 
 def get_db_path():
-    """Returns database path. Uses OS temp dir (/tmp on Vercel) if VERCEL is set."""
-    if os.environ.get('VERCEL'):
+    """Returns database path. Uses OS temp dir (/tmp on Vercel) if in serverless or read-only."""
+    if os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('LAMBDA_TASK_ROOT'):
         return os.path.join(tempfile.gettempdir(), 'food_nest.db')
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'food_nest.db')
+
+    local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'food_nest.db')
+    try:
+        test_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.test_write')
+        with open(test_file, 'w') as f:
+            f.write('')
+        if os.path.exists(test_file):
+            os.remove(test_file)
+        return local_path
+    except (OSError, IOError, PermissionError):
+        return os.path.join(tempfile.gettempdir(), 'food_nest.db')
 
 def _connect_raw():
     """Internal raw connection without recursive init check."""
