@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local SQLite databases (serverless creates /tmp/food_nest.db automatically)
+*.db
+*.sqlite3
+
+# Test files & local launch scripts
+test_app.py
+run.bat
+run.ps1
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment secrets
+.env
+.env.local

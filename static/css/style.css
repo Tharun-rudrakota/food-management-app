@@ -1,0 +1,66 @@
+/* FreshPantry Custom Styles */
+
+/* Custom Smooth Transitions */
+* {
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar for culinary UI polish */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f0fdf4;
+}
+::-webkit-scrollbar-thumb {
+    background: #a7f3d0;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #059669;
+}
+
+/* Water Glass Animation */
+.water-glass {
+    transition: all 0.25s ease-in-out;
+}
+.water-glass:hover {
+    transform: translateY(-2px);
+}
+
+/* Toast Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast-item {
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-item.dismissing {
+    animation: fadeOutRight 0.25s ease forwards;
+}
+
+/* Flash alert dismiss */
+.flash-alert {
+    animation: slideInRight 0.3s ease;
+}

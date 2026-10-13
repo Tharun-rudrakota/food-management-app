@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}Daily Food Management - FreshPantry{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Daily Food Management</h1>
+            <p class="text-sm text-slate-500 mt-1">Track what you eat, minimize food waste, and plan meals from expiring ingredients</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="openLogModal()" class="inline-flex items-center gap-2 bg-[#059669] hover:bg-[#047857] text-white font-semibold px-5 py-2.5 rounded-xl text-sm shadow-sm transition">
+                <i class="fa-solid fa-plus text-xs"></i> Log Food Eaten
+            </button>
+        </div>
+    </div>
+
+    <!-- Smart Waste Reduction Banner: Cook / Eat First! -->
+    {% if urgent_items %}
+        <div class="bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-emerald-50/40 border border-amber-200/80 rounded-2xl p-6 shadow-xs">
+            <div class="flex items-center gap-2.5 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center text-sm shadow-xs">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Priority Recommendation: Use These Ingredients First!</h2>
+                    <p class="text-xs text-slate-600">These items in your inventory are expiring soonest. Plan your daily meals around them to avoid food waste.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                {% for item in urgent_items[:4] %}
+                    <div class="bg-white p-4 rounded-xl border border-amber-200/80 shadow-2xs flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-slate-900 text-sm truncate">{{ item.name }}</h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                                    {% if item.days_diff < 0 %}bg-rose-100 text-rose-700
+                                    {% elif item.days_diff == 0 %}bg-rose-100 text-rose-700
+                                    {% else %}bg-amber-100 text-amber-800{% endif %}">
+                                    {% if item.days_diff < 0 %}Expired
+                                    {% elif item.days_diff == 0 %}Expires Today
+                                    {% elif item.days_diff == 1 %}Expires Tomorrow
+                                    {% else %}{{ item.days_diff }}d left{% endif %}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Available: <strong>{{ item.quantity }} {{ item.unit }}</strong> ({{ item.storage_location }})</p>
+                        </div>
+
+                        <button onclick="quickConsumeUrgent({{ item.id }}, '{{ item.name|replace("'", "\\'") }}', {{ item.quantity }}, '{{ item.unit }}')"
+                            class="mt-3 w-full py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 font-bold text-xs rounded-lg transition text-center flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-utensils text-[10px]"></i> Log as Consumed
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Date Filter & Daily Consumption Log -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Food Consumption History</h2>
+                <p class="text-xs text-slate-500">Record of food items eaten or cooked on this date</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label for="historyDate" class="text-xs font-semibold text-slate-600">Select Date:</label>
+                <input type="date" id="historyDate" value="{{ selected_date }}" onchange="window.location.href = '{{ url_for('daily_usage') }}?date=' + this.value"
+                    class="py-1.5 px-3 border border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500">
+                {% if selected_date != today_str %}
+                    <a href="{{ url_for('daily_usage') }}" class="text-xs font-semibold text-emerald-600 hover:underline ml-2">Today</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if consumptions %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                            <th class="py-3 px-4">Food Item</th>
+                            <th class="py-3 px-4">Amount Consumed</th>
+                            <th class="py-3 px-4">Meal / Usage</th>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Notes</th>
+                            <th class="py-3 px-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for c in consumptions %}
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="py-3.5 px-4 font-bold text-slate-900">{{ c.food_name }}</td>
+                                <td class="py-3.5 px-4 font-semibold text-slate-700">{{ c.quantity_consumed }} {{ c.unit }}</td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                                        {{ c.meal_type }}
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 text-slate-600 text-xs">{{ c.date_consumed }}</td>
+                                <td class="py-3.5 px-4 text-slate-500 text-xs">{{ c.notes or '-' }}</td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <button onclick="deleteConsumption({{ c.id }})" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete Entry">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="py-12 text-center text-slate-400">
+                <i class="fa-solid fa-utensils text-3xl text-slate-300 mb-2 block"></i>
+                <p class="text-sm font-medium text-slate-600">No food consumption logged for this date.</p>
+                <p class="text-xs text-slate-400 mt-0.5">Use the "Use" button on inventory items or click below to log a meal.</p>
+                <button onclick="openLogModal()" class="mt-4 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-xs rounded-xl hover:bg-emerald-100 transition">
+                    + Log Consumption
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Modal: Log Food Consumption -->
+<div id="logConsumptionModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Record Food Eaten / Cooked</h3>
+            <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="consumptionForm" onsubmit="handleConsumptionSubmit(event)" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Food Item Name *</label>
+                <input type="text" name="food_name" required placeholder="e.g. Scrambled Eggs & Toast" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Quantity *</label>
+                    <input type="number" name="quantity" step="0.1" min="0.1" value="1.0" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Unit *</label>
+                    <input type="text" name="unit" value="portion" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Meal / Usage</label>
+                    <select name="meal_type" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch" selected>Lunch</option>
+                        <option value="Dinner">Dinner</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Recipe">Recipe</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+                    <input type="date" name="date" value="{{ selected_date }}" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Notes</label>
+                <input type="text" name="notes" placeholder="e.g. Cooked with garlic and olive oil" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeLogModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl shadow-sm transition">Save Entry</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openLogModal() {
+    document.getElementById('logConsumptionModal').classList.remove('hidden');
+}
+function closeLogModal() {
+    document.getElementById('logConsumptionModal').classList.add('hidden');
+}
+
+async function quickConsumeUrgent(id, name, qty, unit) {
+    const consumeAmount = prompt(`How much of "${name}" (Available: ${qty} ${unit}) did you consume today?`, qty);
+    if (!consumeAmount || isNaN(consumeAmount) || parseFloat(consumeAmount) <= 0) return;
+
+    try {
+        const res = await fetch(`/api/inventory/consume/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quantity: parseFloat(consumeAmount),
+                meal_type: 'Dinner',
+                date: new Date().toISOString().split('T')[0],
+                notes: 'Consumed before expiry'
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => window.location.reload(), 400);
+        } else {
+            showToast(data.message || 'Error recording consumption', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+
+async function handleConsumptionSubmit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+        const res = await fetch('/api/consumption/log', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeLogModal();
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Error recording entry', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+
+async function deleteConsumption(id) {
+    if (!confirm('Remove this consumption log?')) return;
+    try {
+        const res = await fetch(`/api/consumption/delete/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'info');
+            setTimeout(() => window.location.reload(), 300);
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+</script>
+{% endblock %}

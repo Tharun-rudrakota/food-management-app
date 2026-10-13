@@ -1,0 +1,528 @@
+{% extends 'base.html' %}
+
+{% block title %}Food Inventory - FreshPantry{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Food Inventory Management</h1>
+            <p class="text-sm text-slate-500 mt-1">Monitor stock levels, track shelf life, and avoid food expiration</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="openAddModal()"
+                class="inline-flex items-center gap-2 bg-[#059669] hover:bg-[#047857] text-white font-semibold px-5 py-2.5 rounded-xl text-sm shadow-sm transition">
+                <i class="fa-solid fa-plus text-xs"></i> Add Food Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Filter Ribbon (Harmonious Palette) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+        <a href="{{ url_for('inventory') }}" class="p-3.5 rounded-xl border transition {% if not status_filter %}bg-[#e0f2fe] border-sky-300 text-sky-950 font-bold shadow-2xs{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            <span class="block text-2xl font-black text-[#0284c7]">{{ stats.total }}</span>
+            <span class="text-xs">All Items</span>
+        </a>
+
+        <a href="{{ url_for('inventory', status='Fresh') }}" class="p-3.5 rounded-xl border transition {% if status_filter == 'Fresh' %}bg-[#dcfce7] border-emerald-300 text-emerald-950 font-bold shadow-2xs{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            <span class="block text-2xl font-black text-[#059669]">{{ stats.fresh }}</span>
+            <span class="text-xs">Fresh & Safe</span>
+        </a>
+
+        <a href="{{ url_for('inventory', status='Expiring Soon') }}" class="p-3.5 rounded-xl border transition {% if status_filter == 'Expiring Soon' %}bg-[#fef3c7] border-amber-300 text-amber-950 font-bold shadow-2xs{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            <span class="block text-2xl font-black text-[#d97706]">{{ stats.expiring_soon }}</span>
+            <span class="text-xs">Expiring Soon (≤ 7d)</span>
+        </a>
+
+        <a href="{{ url_for('inventory', status='Expired') }}" class="p-3.5 rounded-xl border transition {% if status_filter == 'Expired' %}bg-[#fee2e2] border-rose-300 text-rose-950 font-bold shadow-2xs{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            <span class="block text-2xl font-black text-[#e11d48]">{{ stats.expired }}</span>
+            <span class="text-xs">Expired</span>
+        </a>
+    </div>
+
+    <!-- Filter and Search Row -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <form method="GET" action="{{ url_for('inventory') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <!-- Search -->
+            <div class="sm:col-span-5 relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </div>
+                <input type="text" name="q" value="{{ search_q }}" placeholder="Search by food name or notes..."
+                    class="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#167d4f]">
+            </div>
+
+            <!-- Storage Location -->
+            <div class="sm:col-span-3">
+                <select name="location" onchange="this.form.submit()" class="w-full py-2 px-3 border border-slate-200 bg-white rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#167d4f]">
+                    <option value="">All Storage Locations</option>
+                    <option value="Fridge" {% if location_filter == 'Fridge' %}selected{% endif %}>Fridge</option>
+                    <option value="Freezer" {% if location_filter == 'Freezer' %}selected{% endif %}>Freezer</option>
+                    <option value="Pantry" {% if location_filter == 'Pantry' %}selected{% endif %}>Pantry</option>
+                    <option value="Counter" {% if location_filter == 'Counter' %}selected{% endif %}>Counter</option>
+                </select>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="sm:col-span-3">
+                <select name="category" onchange="this.form.submit()" class="w-full py-2 px-3 border border-slate-200 bg-white rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#167d4f]">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                        <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Clear button -->
+            <div class="sm:col-span-1 flex items-center">
+                <a href="{{ url_for('inventory') }}" class="w-full py-2 text-center text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Inventory Items Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {% if items %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            <th class="py-3 px-5">Food Item</th>
+                            <th class="py-3 px-4">Category</th>
+                            <th class="py-3 px-4">Quantity</th>
+                            <th class="py-3 px-4">Location</th>
+                            <th class="py-3 px-4">Expiry Date</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in items %}
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <!-- Food Name -->
+                                <td class="py-3.5 px-5">
+                                    <div class="font-bold text-slate-900">{{ item.name }}</div>
+                                    {% if item.notes %}
+                                        <span class="text-xs text-slate-400 block truncate max-w-xs">{{ item.notes }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Category -->
+                                <td class="py-3.5 px-4 text-slate-600">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                        {{ item.category }}
+                                    </span>
+                                </td>
+
+                                <!-- Quantity -->
+                                <td class="py-3.5 px-4 font-semibold text-slate-800">
+                                    {{ item.quantity }} <span class="text-xs font-normal text-slate-400">{{ item.unit }}</span>
+                                </td>
+
+                                <!-- Location -->
+                                <td class="py-3.5 px-4">
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium
+                                        {% if item.storage_location == 'Fridge' %}text-sky-700
+                                        {% elif item.storage_location == 'Freezer' %}text-indigo-700
+                                        {% else %}text-amber-800{% endif %}">
+                                        {% if item.storage_location == 'Fridge' %}<i class="fa-solid fa-snowflake text-[10px]"></i>
+                                        {% elif item.storage_location == 'Freezer' %}<i class="fa-solid fa-icicles text-[10px]"></i>
+                                        {% else %}<i class="fa-solid fa-box-archive text-[10px]"></i>{% endif %}
+                                        {{ item.storage_location }}
+                                    </span>
+                                </td>
+
+                                <!-- Expiry Date -->
+                                <td class="py-3.5 px-4">
+                                    <div class="text-slate-800 font-medium">{{ item.expiry_date }}</div>
+                                    <span class="text-[11px] font-semibold
+                                        {% if item.status == 'Fresh' %}text-emerald-600
+                                        {% elif item.status == 'Expiring Soon' %}text-amber-600
+                                        {% else %}text-rose-600{% endif %}">
+                                        {{ item.days_left_text }}
+                                    </span>
+                                </td>
+
+                                <!-- Status Badge -->
+                                <td class="py-3.5 px-4">
+                                    {% if item.status == 'Fresh' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Fresh
+                                        </span>
+                                    {% elif item.status == 'Expiring Soon' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            Expiring Soon
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            Expired
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="py-3.5 px-5 text-right space-x-1">
+                                    <!-- Consume Button (Daily Food Management Action) -->
+                                    <button onclick="openConsumeModal({{ item.id }}, '{{ item.name|replace("'", "\\'") }}', {{ item.quantity }}, '{{ item.unit }}')"
+                                        class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/70 text-xs font-bold rounded-lg transition" title="Log as Consumed / Used Today">
+                                        <i class="fa-solid fa-utensils mr-1"></i> Use
+                                    </button>
+
+                                    <!-- Edit Button -->
+                                    <button onclick="openEditModal({{ item.id }}, '{{ item.name|replace("'", "\\'") }}', '{{ item.category }}', {{ item.quantity }}, '{{ item.unit }}', '{{ item.storage_location }}', '{{ item.purchase_date }}', '{{ item.expiry_date }}', '{{ item.notes|replace("'", "\\'") }}')"
+                                        class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Edit Item">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <button onclick="deleteItem({{ item.id }}, '{{ item.name|replace("'", "\\'") }}')"
+                                        class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete from Inventory">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-12 text-center text-slate-400">
+                <i class="fa-solid fa-box-open text-4xl text-slate-300 mb-3 block"></i>
+                <h3 class="text-base font-bold text-slate-700">No Food Items Found</h3>
+                <p class="text-xs text-slate-400 mt-1">Try adjusting your search filters or click "+ Add Food Item" above.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ================= MODAL: ADD FOOD ITEM ================= -->
+<div id="addItemModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-900">Add New Food Item</h3>
+            <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="addForm" onsubmit="handleAddSubmit(event)" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Item Name *</label>
+                <input type="text" name="name" required placeholder="e.g. Fresh Whole Milk" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Category *</label>
+                    <select name="category" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                        <option value="Dairy & Eggs">Dairy & Eggs</option>
+                        <option value="Vegetables">Vegetables</option>
+                        <option value="Fruits">Fruits</option>
+                        <option value="Meat & Seafood">Meat & Seafood</option>
+                        <option value="Grains & Pasta">Grains & Pasta</option>
+                        <option value="Bakery">Bakery</option>
+                        <option value="Canned Goods">Canned Goods</option>
+                        <option value="Condiments & Oils">Condiments & Oils</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Storage Location *</label>
+                    <select name="storage_location" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                        <option value="Fridge">Fridge</option>
+                        <option value="Freezer">Freezer</option>
+                        <option value="Pantry">Pantry</option>
+                        <option value="Counter">Counter</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Quantity *</label>
+                    <input type="number" name="quantity" step="0.1" min="0.1" value="1.0" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Unit *</label>
+                    <input type="text" name="unit" value="pcs" required placeholder="pcs, kg, L, pack" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Purchase Date</label>
+                    <input type="date" name="purchase_date" value="{{ today_str }}" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Expiry Date *</label>
+                    <input type="date" name="expiry_date" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
+                <input type="text" name="notes" placeholder="e.g. Bought from farmers market" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#167d4f]">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeAddModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl shadow-sm transition">Save to Inventory</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL: EDIT FOOD ITEM ================= -->
+<div id="editItemModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-900">Edit Food Item</h3>
+            <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="editForm" onsubmit="handleEditSubmit(event)" class="mt-4 space-y-4">
+            <input type="hidden" id="edit_id">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Item Name *</label>
+                <input type="text" id="edit_name" name="name" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Category *</label>
+                    <select id="edit_category" name="category" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                        <option value="Dairy & Eggs">Dairy & Eggs</option>
+                        <option value="Vegetables">Vegetables</option>
+                        <option value="Fruits">Fruits</option>
+                        <option value="Meat & Seafood">Meat & Seafood</option>
+                        <option value="Grains & Pasta">Grains & Pasta</option>
+                        <option value="Bakery">Bakery</option>
+                        <option value="Canned Goods">Canned Goods</option>
+                        <option value="Condiments & Oils">Condiments & Oils</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Storage Location *</label>
+                    <select id="edit_location" name="storage_location" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                        <option value="Fridge">Fridge</option>
+                        <option value="Freezer">Freezer</option>
+                        <option value="Pantry">Pantry</option>
+                        <option value="Counter">Counter</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Quantity *</label>
+                    <input type="number" id="edit_quantity" name="quantity" step="0.1" min="0.1" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Unit *</label>
+                    <input type="text" id="edit_unit" name="unit" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Purchase Date</label>
+                    <input type="date" id="edit_purchase" name="purchase_date" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Expiry Date *</label>
+                    <input type="date" id="edit_expiry" name="expiry_date" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Notes</label>
+                <input type="text" id="edit_notes" name="notes" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl shadow-sm transition">Update Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL: CONSUME / USE FOOD (DAILY LOG) ================= -->
+<div id="consumeModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900" id="consumeModalTitle">Use Food Item</h3>
+            <button onclick="closeConsumeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="consumeForm" onsubmit="handleConsumeSubmit(event)" class="mt-4 space-y-4">
+            <input type="hidden" id="consume_id">
+
+            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-900">
+                <p>Consuming this food item will record a <strong>Daily Food Usage</strong> entry and deduct the amount from your inventory.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Quantity to Consume</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="consume_qty" name="quantity" step="0.1" min="0.1" required
+                        class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-800">
+                    <span id="consume_unit_label" class="text-xs font-bold text-slate-500 whitespace-nowrap">pcs</span>
+                </div>
+                <span id="consume_max_hint" class="text-[11px] text-slate-400 mt-1 block">Max in inventory: 0</span>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Meal / Usage Type</label>
+                <select name="meal_type" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch" selected>Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Cooking / Recipe">Cooking / Recipe</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+                <input type="date" name="date" value="{{ today_str }}" required class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
+                <input type="text" name="notes" placeholder="e.g. Used for vegetable stir-fry" class="w-full py-2 px-3 border border-slate-200 rounded-xl text-sm">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeConsumeModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl shadow-sm transition">Record Consumption</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddModal() {
+    document.getElementById('addItemModal').classList.remove('hidden');
+}
+function closeAddModal() {
+    document.getElementById('addItemModal').classList.add('hidden');
+}
+
+function openEditModal(id, name, cat, qty, unit, loc, purch, exp, notes) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_category').value = cat;
+    document.getElementById('edit_quantity').value = qty;
+    document.getElementById('edit_unit').value = unit;
+    document.getElementById('edit_location').value = loc;
+    document.getElementById('edit_purchase').value = purch;
+    document.getElementById('edit_expiry').value = exp;
+    document.getElementById('edit_notes').value = notes || '';
+    document.getElementById('editItemModal').classList.remove('hidden');
+}
+function closeEditModal() {
+    document.getElementById('editItemModal').classList.add('hidden');
+}
+
+function openConsumeModal(id, name, currentQty, unit) {
+    document.getElementById('consume_id').value = id;
+    document.getElementById('consumeModalTitle').innerText = 'Use ' + name;
+    document.getElementById('consume_qty').value = currentQty;
+    document.getElementById('consume_qty').max = currentQty;
+    document.getElementById('consume_unit_label').innerText = unit;
+    document.getElementById('consume_max_hint').innerText = `Available in inventory: ${currentQty} ${unit}`;
+    document.getElementById('consumeModal').classList.remove('hidden');
+}
+function closeConsumeModal() {
+    document.getElementById('consumeModal').classList.add('hidden');
+}
+
+async function handleAddSubmit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+        const res = await fetch('/api/inventory/add', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeAddModal();
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Error adding item', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+
+async function handleEditSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit_id').value;
+    const formData = new FormData(e.target);
+    try {
+        const res = await fetch(`/api/inventory/edit/${id}`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeEditModal();
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Error updating item', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+
+async function handleConsumeSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('consume_id').value;
+    const formData = new FormData(e.target);
+    try {
+        const res = await fetch(`/api/inventory/consume/${id}`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeConsumeModal();
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Failed to record consumption', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+
+async function deleteItem(id, name) {
+    if (!confirm(`Are you sure you want to remove "${name}" from your inventory?`)) return;
+    try {
+        const res = await fetch(`/api/inventory/delete/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'info');
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Could not delete', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection failed', 'danger');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}About - FreshPantry{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-8 py-10 space-y-10">
+
+    <!-- Mission Hero -->
+    <div class="text-center space-y-4">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-[#157a4e] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+            About FreshPantry
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            Keep Food Fresh, Cut Waste, Eat Better
+        </h1>
+        <p class="text-slate-600 max-w-2xl mx-auto text-base leading-relaxed">
+            FreshPantry was created to solve everyday kitchen challenges: forgotten groceries, unmonitored expiry dates, and unnecessary food waste. By giving you full visibility over your pantry, fridge, and freezer, we help you save money and protect the planet.
+        </p>
+    </div>
+
+    <!-- 3 Pillars -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="w-12 h-12 rounded-xl bg-sky-100 text-[#1d82d2] flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Smart Food Inventory</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Log and categorize every item in your kitchen. From dairy to fresh produce and dry grains, know exactly what you own and where it's stored.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 text-[#d97706] flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Proactive Expiry Alerts</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Stay one step ahead with intelligent 7-day countdowns. Easily pinpoint which foods need to be consumed immediately before they spoil.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-[#157a4e] flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-seedling"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Daily Food Management</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Record your daily consumption and meal usage. Plan family dinners around expiring ingredients and celebrate zero-waste kitchen habits.
+            </p>
+        </div>
+    </div>
+
+    <!-- Storage Best Practices Guide -->
+    <div class="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
+        <h2 class="text-xl font-bold text-slate-900">Food Storage Best Practices</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs text-slate-600">
+            <div class="border-l-2 border-sky-400 pl-4 space-y-1">
+                <h4 class="font-bold text-slate-800 text-sm">Refrigerator (0°C – 4°C)</h4>
+                <p>Ideal for dairy, opened sauces, leftovers, berries, and leafy vegetables in the crisper drawer.</p>
+            </div>
+            <div class="border-l-2 border-indigo-400 pl-4 space-y-1">
+                <h4 class="font-bold text-slate-800 text-sm">Freezer (-18°C)</h4>
+                <p>Extend meat, seafood, pre-cooked portions, and frozen fruits by up to 3–6 months with airtight seals.</p>
+            </div>
+            <div class="border-l-2 border-amber-400 pl-4 space-y-1">
+                <h4 class="font-bold text-slate-800 text-sm">Dry Pantry (Cool & Dark)</h4>
+                <p>Best for grains, rice, pasta, canned goods, whole potatoes, onions, and cooking oils.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

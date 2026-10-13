@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics & Trends - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pt-2">
+    <!-- Header -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Nutrition Analytics & Trends</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Visualize your 7-day intake consistency and macronutrient split</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-100">
+                <i class="fa-solid fa-calendar-week text-emerald-600"></i> Past 7 Days
+            </span>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <span>Avg Daily Intake</span>
+                <i class="fa-solid fa-chart-simple text-emerald-500"></i>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-extrabold text-slate-900">{{ avg_calories|int }}</span>
+                <span class="text-xs text-slate-400 font-medium">kcal / day</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Goal: {{ user.daily_calorie_goal }} kcal</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <span>Days Tracked</span>
+                <i class="fa-solid fa-calendar-check text-sky-500"></i>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-extrabold text-slate-900">{{ days_logged }}</span>
+                <span class="text-xs text-slate-400 font-medium">of 7 days</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Consistency is key</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <span>Today's Protein</span>
+                <i class="fa-solid fa-dumbbell text-indigo-500"></i>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-extrabold text-slate-900">{{ today_summary.totals.protein }}g</span>
+                <span class="text-xs text-slate-400 font-medium">/ {{ user.protein_goal }}g</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">{{ today_summary.percentages.protein }}% of target met</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <span>Today's Water</span>
+                <i class="fa-solid fa-droplet text-sky-500"></i>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-extrabold text-slate-900">{{ today_summary.water.glasses }}</span>
+                <span class="text-xs text-slate-400 font-medium">/ {{ today_summary.water.goal_glasses }} glasses</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">{{ today_summary.percentages.water }}% hydrated</p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 7-Day Calorie Trend Chart -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">7-Day Calorie Intake vs Target</h2>
+                    <p class="text-xs text-slate-400">Green line represents your daily goal ({{ user.daily_calorie_goal }} kcal)</p>
+                </div>
+            </div>
+            <div class="h-72 w-full">
+                <canvas id="caloriesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Today's Macronutrient Ratio Donut Chart -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-1 flex flex-col justify-between">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Today's Macro Ratio</h2>
+                <p class="text-xs text-slate-400 mb-3">Breakdown by caloric grams</p>
+                <div class="h-56 relative flex items-center justify-center">
+                    <canvas id="macroDonutChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-center text-xs pt-4 border-t border-slate-100">
+                <div class="bg-indigo-50/70 p-2 rounded-xl">
+                    <span class="block font-bold text-indigo-700">{{ today_summary.totals.protein }}g</span>
+                    <span class="text-[10px] text-slate-500 font-medium">Protein</span>
+                </div>
+                <div class="bg-amber-50/70 p-2 rounded-xl">
+                    <span class="block font-bold text-amber-700">{{ today_summary.totals.carbs }}g</span>
+                    <span class="text-[10px] text-slate-500 font-medium">Carbs</span>
+                </div>
+                <div class="bg-rose-50/70 p-2 rounded-xl">
+                    <span class="block font-bold text-rose-700">{{ today_summary.totals.fat }}g</span>
+                    <span class="text-[10px] text-slate-500 font-medium">Fat</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7-Day Macro Stacked Trend Chart -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="mb-4">
+            <h2 class="text-base font-bold text-slate-900">7-Day Macronutrient Distribution (Grams)</h2>
+            <p class="text-xs text-slate-400">Compare daily Protein, Carbohydrate, and Fat grams over the past week</p>
+        </div>
+        <div class="h-72 w-full">
+            <canvas id="macroBarChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const chartData = {{ chart_data|tojson }};
+const todayTotals = {{ today_summary.totals|tojson }};
+const dailyGoal = {{ user.daily_calorie_goal }};
+
+// 1. Calories Line / Bar Chart
+const calLabels = chartData.map(d => d.label);
+const calValues = chartData.map(d => d.calories);
+const calGoals = chartData.map(() => dailyGoal);
+
+const ctxCalories = document.getElementById('caloriesChart').getContext('2d');
+new Chart(ctxCalories, {
+    type: 'bar',
+    data: {
+        labels: calLabels,
+        datasets: [
+            {
+                type: 'line',
+                label: 'Daily Target Goal',
+                data: calGoals,
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0
+            },
+            {
+                type: 'bar',
+                label: 'Calories Consumed',
+                data: calValues,
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                hoverBackgroundColor: '#059669',
+                borderRadius: 8
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#f1f5f9' },
+                ticks: { color: '#94a3b8' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#64748b', font: { weight: '500' } }
+            }
+        },
+        plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12 } }
+        }
+    }
+});
+
+// 2. Macro Donut Chart
+const ctxDonut = document.getElementById('macroDonutChart').getContext('2d');
+const pGrams = todayTotals.protein || 0;
+const cGrams = todayTotals.carbs || 0;
+const fGrams = todayTotals.fat || 0;
+
+new Chart(ctxDonut, {
+    type: 'doughnut',
+    data: {
+        labels: ['Protein (g)', 'Carbs (g)', 'Fat (g)'],
+        datasets: [{
+            data: (pGrams === 0 && cGrams === 0 && fGrams === 0) ? [1, 1, 1] : [pGrams, cGrams, fGrams],
+            backgroundColor: ['#6366f1', '#f59e0b', '#f43f5e'],
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+        },
+        cutout: '68%'
+    }
+});
+
+// 3. 7-Day Macro Stacked Bar Chart
+const ctxMacroBar = document.getElementById('macroBarChart').getContext('2d');
+new Chart(ctxMacroBar, {
+    type: 'bar',
+    data: {
+        labels: calLabels,
+        datasets: [
+            {
+                label: 'Protein (g)',
+                data: chartData.map(d => d.protein),
+                backgroundColor: '#6366f1',
+                borderRadius: 4
+            },
+            {
+                label: 'Carbohydrates (g)',
+                data: chartData.map(d => d.carbs),
+                backgroundColor: '#f59e0b',
+                borderRadius: 4
+            },
+            {
+                label: 'Fat (g)',
+                data: chartData.map(d => d.fat),
+                backgroundColor: '#f43f5e',
+                borderRadius: 4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' } }
+        },
+        plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12 } }
+        }
+    }
+});
+</script>
+{% endblock %}

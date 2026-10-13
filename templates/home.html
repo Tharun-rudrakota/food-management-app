@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - FreshPantry{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-8 py-8 flex flex-col justify-between min-h-[calc(100vh-140px)]">
+
+    <!-- Hero Top Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-4 pb-8">
+        <!-- Left Content -->
+        <div class="lg:col-span-7 text-center sm:text-left space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Fresh Kitchen Management
+            </div>
+
+            <p class="text-[#059669] text-xl font-bold tracking-normal">
+                Welcome to FreshPantry
+            </p>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-[52px] font-black text-slate-900 tracking-tight leading-[1.15]">
+                Keep Food Fresh,<br>
+                <span class="text-[#059669]">Waste Less, Live Better</span>
+            </h1>
+
+            <p class="text-slate-600 text-base max-w-lg leading-relaxed pt-1">
+                Track your food inventory, monitor shelf life, and effortlessly manage daily meals.
+            </p>
+
+            <div class="pt-3">
+                <a href="{{ url_for('inventory') }}"
+                   class="inline-flex items-center gap-2 bg-[#059669] hover:bg-[#047857] text-white font-semibold px-7 py-3.5 rounded-xl text-base shadow-md shadow-emerald-700/20 hover:shadow-lg transition transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-table-columns text-sm"></i>
+                    Food Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Hero Graphic -->
+        <div class="lg:col-span-5 flex justify-center items-center">
+            <div class="relative w-full max-w-md p-4 bg-gradient-to-tr from-emerald-50/70 via-teal-50/40 to-amber-50/40 rounded-3xl border border-emerald-100/70 shadow-sm flex items-center justify-center">
+                <!-- SVG Illustration of Fresh Produce Basket & Organizer Containers -->
+                <svg viewBox="0 0 500 380" class="w-full h-auto drop-shadow-md" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="basketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#92400e"/>
+                            <stop offset="100%" stop-color="#78350f"/>
+                        </linearGradient>
+                        <linearGradient id="binGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                            <stop offset="100%" stop-color="#f1f5f9" stop-opacity="0.85"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Background aura -->
+                    <circle cx="210" cy="190" r="140" fill="#ecfdf5" opacity="0.8"/>
+                    <circle cx="360" cy="180" r="110" fill="#fef9c3" opacity="0.6"/>
+
+                    <!-- LEFT: Woven Fresh Food Basket -->
+                    <g transform="translate(40, 100)">
+                        <!-- Produce spilling out -->
+                        <!-- Leaves & Veggies -->
+                        <path d="M70,80 Q90,30 140,50 Q110,90 70,80 Z" fill="#22c55e"/>
+                        <path d="M120,70 Q160,20 180,60 Q150,90 120,70 Z" fill="#16a34a"/>
+                        <path d="M50,90 Q40,40 90,60 Z" fill="#4ade80"/>
+
+                        <!-- Red Apples -->
+                        <circle cx="110" cy="90" r="26" fill="#ef4444"/>
+                        <path d="M110,65 Q115,55 120,58" stroke="#78350f" stroke-width="3" fill="none"/>
+                        <circle cx="150" cy="100" r="24" fill="#dc2626"/>
+
+                        <!-- Yellow Lemons / Oranges -->
+                        <circle cx="80" cy="110" r="22" fill="#f59e0b"/>
+                        <circle cx="175" cy="115" r="20" fill="#fbbf24"/>
+
+                        <!-- Purple Grapes -->
+                        <circle cx="130" cy="120" r="12" fill="#8b5cf6"/>
+                        <circle cx="145" cy="125" r="11" fill="#7c3aed"/>
+                        <circle cx="125" cy="135" r="10" fill="#6d28d9"/>
+                        <circle cx="140" cy="140" r="10" fill="#5b21b6"/>
+
+                        <!-- Woven Basket Body -->
+                        <path d="M40,110 L60,190 Q120,210 180,190 L200,110 Q120,135 40,110 Z" fill="url(#basketGrad)"/>
+                        <!-- Weave details -->
+                        <path d="M50,130 Q120,150 190,130" stroke="#b45309" stroke-width="3" fill="none"/>
+                        <path d="M55,150 Q120,170 185,150" stroke="#b45309" stroke-width="3" fill="none"/>
+                        <path d="M60,170 Q120,190 180,170" stroke="#b45309" stroke-width="3" fill="none"/>
+                        <path d="M80,115 L95,195 M120,120 L120,200 M160,115 L145,195" stroke="#78350f" stroke-width="2.5" fill="none"/>
+                    </g>
+
+                    <!-- Arrow icon -->
+                    <g transform="translate(265, 185)">
+                        <path d="M0,0 L20,0 M12,-8 L20,0 L12,8" stroke="#059669" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+
+                    <!-- RIGHT: Stack of Transparent Food Storage Organizers -->
+                    <g transform="translate(305, 50)">
+                        <!-- Bin 1: Fresh Berries / Tomatoes -->
+                        <rect x="0" y="0" width="150" height="55" rx="8" fill="url(#binGrad)" stroke="#cbd5e1" stroke-width="2"/>
+                        <circle cx="35" cy="28" r="10" fill="#ef4444"/>
+                        <circle cx="60" cy="28" r="10" fill="#dc2626"/>
+                        <circle cx="85" cy="28" r="10" fill="#b91c1c"/>
+                        <circle cx="110" cy="28" r="10" fill="#ef4444"/>
+                        <!-- Lid -->
+                        <rect x="-4" y="-4" width="158" height="8" rx="3" fill="#94a3b8" opacity="0.6"/>
+
+                        <!-- Bin 2: Crisp Greens / Cucumbers -->
+                        <rect x="0" y="65" width="150" height="55" rx="8" fill="url(#binGrad)" stroke="#cbd5e1" stroke-width="2"/>
+                        <rect x="25" y="80" width="35" height="14" rx="4" fill="#22c55e"/>
+                        <rect x="68" y="80" width="35" height="14" rx="4" fill="#16a34a"/>
+                        <rect x="110" y="80" width="25" height="14" rx="4" fill="#15803d"/>
+                        <rect x="-4" y="61" width="158" height="8" rx="3" fill="#94a3b8" opacity="0.6"/>
+
+                        <!-- Bin 3: Carrots & Peppers -->
+                        <rect x="0" y="130" width="150" height="55" rx="8" fill="url(#binGrad)" stroke="#cbd5e1" stroke-width="2"/>
+                        <path d="M25,160 L50,145 L55,152 Z" fill="#f97316"/>
+                        <path d="M65,160 L90,145 L95,152 Z" fill="#ea580c"/>
+                        <path d="M105,160 L130,145 L135,152 Z" fill="#f97316"/>
+                        <rect x="-4" y="126" width="158" height="8" rx="3" fill="#94a3b8" opacity="0.6"/>
+
+                        <!-- Bin 4: Dairy / Cheeses -->
+                        <rect x="0" y="195" width="150" height="55" rx="8" fill="url(#binGrad)" stroke="#cbd5e1" stroke-width="2"/>
+                        <rect x="25" y="210" width="35" height="24" rx="3" fill="#fef08a" stroke="#fde047" stroke-width="1.5"/>
+                        <circle cx="35" cy="220" r="2.5" fill="#ca8a04"/>
+                        <circle cx="48" cy="225" r="2" fill="#ca8a04"/>
+                        <rect x="75" y="210" width="45" height="24" rx="4" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+                        <rect x="-4" y="191" width="158" height="8" rx="3" fill="#94a3b8" opacity="0.6"/>
+
+                        <!-- Bin 5: Citrus / Apples -->
+                        <rect x="0" y="260" width="150" height="55" rx="8" fill="url(#binGrad)" stroke="#cbd5e1" stroke-width="2"/>
+                        <circle cx="35" cy="288" r="14" fill="#eab308"/>
+                        <circle cx="75" cy="288" r="14" fill="#f97316"/>
+                        <circle cx="115" cy="288" r="14" fill="#ef4444"/>
+                        <rect x="-4" y="256" width="158" height="8" rx="3" fill="#94a3b8" opacity="0.6"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Status Metric Cards (Harmonious Modern Kitchen Palette) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 my-8">
+        <!-- 1. Total Food Items Card -->
+        <a href="{{ url_for('inventory') }}" class="group block bg-gradient-to-br from-[#f0f8ff] to-[#e0f2fe]/60 hover:to-[#bae6fd]/50 transition-all duration-200 p-6 rounded-2xl text-center border border-sky-200/70 shadow-2xs hover:shadow-md hover:-translate-y-1">
+            <div class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-boxes-stacked text-xs"></i>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-sky-950">Total Food Items</h3>
+            <p class="text-4xl sm:text-5xl font-black text-[#0284c7] my-2.5 tracking-tight">{{ stats.total }}</p>
+            <p class="text-xs text-sky-800/70 font-medium">All items in your inventory</p>
+        </a>
+
+        <!-- 2. Fresh Items Card -->
+        <a href="{{ url_for('inventory', status='Fresh') }}" class="group block bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7]/60 hover:to-[#bbf7d0]/50 transition-all duration-200 p-6 rounded-2xl text-center border border-emerald-200/70 shadow-2xs hover:shadow-md hover:-translate-y-1">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-shield-heart text-xs"></i>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-emerald-950">Fresh Items</h3>
+            <p class="text-4xl sm:text-5xl font-black text-[#059669] my-2.5 tracking-tight">{{ stats.fresh }}</p>
+            <p class="text-xs text-emerald-800/70 font-medium">Items are fresh and safe</p>
+        </a>
+
+        <!-- 3. Expiring Soon Card -->
+        <a href="{{ url_for('inventory', status='Expiring Soon') }}" class="group block bg-gradient-to-br from-[#fffbeb] to-[#fef3c7]/60 hover:to-[#fde68a]/50 transition-all duration-200 p-6 rounded-2xl text-center border border-amber-200/70 shadow-2xs hover:shadow-md hover:-translate-y-1">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-hourglass-half text-xs"></i>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-amber-950">Expiring Soon</h3>
+            <p class="text-4xl sm:text-5xl font-black text-[#d97706] my-2.5 tracking-tight">{{ stats.expiring_soon }}</p>
+            <p class="text-xs text-amber-800/70 font-medium">Items expiring in next 7 days</p>
+        </a>
+
+        <!-- 4. Expired Items Card -->
+        <a href="{{ url_for('inventory', status='Expired') }}" class="group block bg-gradient-to-br from-[#fff1f2] to-[#fee2e2]/60 hover:to-[#fecaca]/50 transition-all duration-200 p-6 rounded-2xl text-center border border-rose-200/70 shadow-2xs hover:shadow-md hover:-translate-y-1">
+            <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-rose-950">Expired Items</h3>
+            <p class="text-4xl sm:text-5xl font-black text-[#e11d48] my-2.5 tracking-tight">{{ stats.expired }}</p>
+            <p class="text-xs text-rose-800/70 font-medium">Items already expired</p>
+        </a>
+    </div>
+
+</div>
+{% endblock %}

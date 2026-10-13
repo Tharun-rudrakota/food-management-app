@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FreshPantry - Keep Food Fresh, Waste Less, Live Better{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: {
+                            800: '#153b2b',
+                            900: '#113325',
+                            950: '#0c2419'
+                        },
+                        brandgreen: {
+                            500: '#1b8a56',
+                            600: '#157a4e',
+                            700: '#10633f'
+                        },
+                        goldtitle: '#f3ba2f'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased flex flex-col md:flex-row">
+
+    {% if session.get('user_id') %}
+    <!-- Refined Artisan Forest Green Sidebar -->
+    <aside class="w-full md:w-64 bg-gradient-to-b from-[#11382a] via-[#0f3226] to-[#0a231a] text-white flex-shrink-0 flex flex-col justify-between p-6 md:min-h-screen border-r border-emerald-950/40 shadow-lg">
+        <div>
+            <!-- Dashboard Title with Botanical Accent -->
+            <div class="flex items-center gap-2.5 mb-8">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-leaf text-sm"></i>
+                </div>
+                <h1 class="text-2xl font-black text-[#fbbf24] tracking-tight">
+                    Dashboard
+                </h1>
+            </div>
+
+            <!-- Navigation Links with Polished Pill Hover/Active states -->
+            <nav class="space-y-1.5 text-sm font-medium">
+                <a href="{{ url_for('home') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'home' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-house w-4 text-center {% if request.endpoint == 'home' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>Home</span>
+                </a>
+                <a href="{{ url_for('about') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'about' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-circle-info w-4 text-center {% if request.endpoint == 'about' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>About</span>
+                </a>
+                <a href="{{ url_for('contact') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'contact' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-envelope w-4 text-center {% if request.endpoint == 'contact' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>Contact</span>
+                </a>
+
+                <!-- Horizontal Divider Line -->
+                <div class="py-2.5">
+                    <hr class="border-t border-emerald-800/40">
+                </div>
+
+                <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'inventory' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-boxes-stacked w-4 text-center {% if request.endpoint == 'inventory' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>Food Inventory</span>
+                </a>
+
+                <a href="{{ url_for('daily_usage') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'daily_usage' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-calendar-check w-4 text-center {% if request.endpoint == 'daily_usage' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>Daily Food Usage</span>
+                </a>
+
+                <a href="{{ url_for('profile') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {% if request.endpoint == 'profile' %}bg-emerald-800/50 text-white font-bold shadow-2xs border border-emerald-700/40{% else %}text-emerald-100/80 hover:text-white hover:bg-emerald-900/40{% endif %}">
+                    <i class="fa-solid fa-user-gear w-4 text-center {% if request.endpoint == 'profile' %}text-[#fbbf24]{% else %}text-emerald-400/70{% endif %}"></i>
+                    <span>Profile</span>
+                </a>
+            </nav>
+
+            <!-- Red Logout Button -->
+            <div class="mt-8">
+                <a href="{{ url_for('logout') }}" class="inline-flex items-center gap-2 bg-rose-600/90 hover:bg-rose-600 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-sm text-xs">
+                    <i class="fa-solid fa-right-from-bracket text-[11px]"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Sidebar footer info -->
+        <div class="hidden md:block pt-6 border-t border-emerald-900/30 text-[11px] text-emerald-300/70">
+            <p>Signed in as: <span class="font-bold text-white">{{ session.get('username') }}</span></p>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content Panel -->
+    <main class="flex-1 flex flex-col min-h-screen bg-white">
+        <!-- Flash Alert Messages -->
+        <div id="flashContainer" class="p-4 max-w-6xl w-full mx-auto space-y-2">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-alert flex items-center justify-between p-3.5 rounded-xl text-sm font-medium shadow-sm transition
+                            {% if category == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200
+                            {% elif category == 'danger' %}bg-rose-50 text-rose-800 border border-rose-200
+                            {% elif category == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200
+                            {% else %}bg-sky-50 text-sky-800 border border-sky-200{% endif %}">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info text-base"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Dynamic Content Body -->
+        <div class="flex-1">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Polished Kitchen-Fresh Footer -->
+        <footer class="py-6 px-4 bg-[#f8faf9] text-center text-xs text-slate-500 mt-auto border-t border-slate-200/70">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <p class="font-semibold text-slate-700">&copy;2026 FreshPantry. All rights Reserved.</p>
+            </div>
+            <p class="text-slate-400">freshpantry2026@gmail.com</p>
+        </footer>
+    </main>
+
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 max-w-sm"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,571 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pt-2">
+    <!-- Top Date Header & Navigation -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-bold text-slate-900">Daily Food Management</h1>
+                {% if is_today %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        Today
+                    </span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-slate-500 mt-0.5">Track your daily intake, macros, and hydration progress</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('dashboard', date=prev_date) }}" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition" title="Previous Day">
+                <i class="fa-solid fa-chevron-left text-sm"></i>
+            </a>
+
+            <input type="date" id="datePicker" value="{{ selected_date }}" onchange="window.location.href = '{{ url_for('dashboard') }}?date=' + this.value"
+                class="px-3 py-1.5 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+
+            <a href="{{ url_for('dashboard', date=next_date) }}" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition" title="Next Day">
+                <i class="fa-solid fa-chevron-right text-sm"></i>
+            </a>
+
+            {% if not is_today %}
+                <a href="{{ url_for('dashboard') }}" class="ml-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition">
+                    Today
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Overview Calorie & Macro Target Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Calorie Card -->
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-lg shadow-emerald-600/15 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between opacity-90 text-xs font-medium uppercase tracking-wider mb-2">
+                    <span>Calories</span>
+                    <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold tracking-tight">{{ summary.totals.calories|int }}</span>
+                    <span class="text-emerald-100 text-sm font-medium">/ {{ summary.goals.calories }} kcal</span>
+                </div>
+                <div class="mt-2 text-xs font-medium text-emerald-100">
+                    {% if summary.remaining_calories >= 0 %}
+                        <span class="font-bold text-white">{{ summary.remaining_calories|int }} kcal</span> remaining today
+                    {% else %}
+                        <span class="font-bold text-rose-200">{{ (-summary.remaining_calories)|int }} kcal</span> over target!
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-emerald-500/40">
+                <div class="w-full bg-emerald-900/40 rounded-full h-2.5 overflow-hidden">
+                    <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: {{ summary.percentages.calories }}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-medium text-emerald-100 mt-1.5">
+                    <span>{{ summary.percentages.calories }}% reached</span>
+                    <span>Goal: {{ summary.goals.calories }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Protein Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <span class="text-indigo-600">Protein</span>
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-bold text-slate-800">{{ summary.totals.protein }}</span>
+                    <span class="text-xs text-slate-400 font-medium">/ {{ summary.goals.protein }}g</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Muscle repair & fullness</p>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: {{ summary.percentages.protein }}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-medium text-slate-400 mt-1">
+                    <span>{{ summary.percentages.protein }}%</span>
+                    <span>{{ (summary.goals.protein - summary.totals.protein)|round(1) if summary.goals.protein > summary.totals.protein else 0 }}g left</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carbohydrates Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <span class="text-amber-600">Carbohydrates</span>
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-bold text-slate-800">{{ summary.totals.carbs }}</span>
+                    <span class="text-xs text-slate-400 font-medium">/ {{ summary.goals.carbs }}g</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Primary bodily energy</p>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: {{ summary.percentages.carbs }}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-medium text-slate-400 mt-1">
+                    <span>{{ summary.percentages.carbs }}%</span>
+                    <span>{{ (summary.goals.carbs - summary.totals.carbs)|round(1) if summary.goals.carbs > summary.totals.carbs else 0 }}g left</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fats Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <span class="text-rose-600">Healthy Fats</span>
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-bold text-slate-800">{{ summary.totals.fat }}</span>
+                    <span class="text-xs text-slate-400 font-medium">/ {{ summary.goals.fat }}g</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Cellular & hormone health</p>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div class="bg-rose-500 h-2 rounded-full transition-all duration-500" style="width: {{ summary.percentages.fat }}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-medium text-slate-400 mt-1">
+                    <span>{{ summary.percentages.fat }}%</span>
+                    <span>{{ (summary.goals.fat - summary.totals.fat)|round(1) if summary.goals.fat > summary.totals.fat else 0 }}g left</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Water Hydration Card & Quick Log Banner -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Water Tracker Widget -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-1 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
+                        <i class="fa-solid fa-glass-water text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900">Hydration Tracker</h2>
+                        <p class="text-xs text-slate-400">Target: {{ summary.water.goal_glasses }} glasses (2.0L)</p>
+                    </div>
+                </div>
+                <span id="waterCountBadge" class="text-sm font-bold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-lg">
+                    {{ summary.water.glasses }} / {{ summary.water.goal_glasses }}
+                </span>
+            </div>
+
+            <!-- Water Glasses Visual -->
+            <div class="my-4 flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap" id="waterGlassesContainer">
+                {% for i in range(1, summary.water.goal_glasses + 1) %}
+                    <div class="water-glass w-7 h-9 rounded-b-md border-2 {% if i <= summary.water.glasses %}border-sky-500 bg-sky-400/80 text-white{% else %}border-slate-300 bg-slate-50 text-slate-300{% endif %} flex items-center justify-center text-[10px] font-bold transition-all duration-200">
+                        <i class="fa-solid fa-droplet text-[9px]"></i>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Increment / Decrement Buttons -->
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button onclick="updateWater('{{ selected_date }}', -1)" class="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-minus text-[10px]"></i> -1 Glass
+                </button>
+                <button onclick="updateWater('{{ selected_date }}', 1)" class="flex-1 py-1.5 px-3 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-plus text-[10px]"></i> +1 Glass (250ml)
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Log & Catalog Navigation Banner -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2 flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Quick Meal Action</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Quickly record what you ate or explore the food items library</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-100">
+                    <i class="fa-solid fa-check"></i> {{ summary.meals|length }} Items Logged
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-3">
+                <button onclick="openLogModal('Breakfast')" class="p-3 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 border border-slate-200/80 rounded-xl text-left transition group">
+                    <div class="flex items-center justify-between mb-1">
+                        <i class="fa-solid fa-mug-hot text-amber-500 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-[11px] text-slate-400 font-medium">{{ summary.meal_calories.Breakfast|int }} kcal</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">Breakfast</p>
+                    <span class="text-[10px] text-slate-400 group-hover:text-amber-600">+ Add Item</span>
+                </button>
+
+                <button onclick="openLogModal('Lunch')" class="p-3 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200/80 rounded-xl text-left transition group">
+                    <div class="flex items-center justify-between mb-1">
+                        <i class="fa-solid fa-bowl-rice text-emerald-500 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-[11px] text-slate-400 font-medium">{{ summary.meal_calories.Lunch|int }} kcal</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">Lunch</p>
+                    <span class="text-[10px] text-slate-400 group-hover:text-emerald-600">+ Add Item</span>
+                </button>
+
+                <button onclick="openLogModal('Dinner')" class="p-3 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200/80 rounded-xl text-left transition group">
+                    <div class="flex items-center justify-between mb-1">
+                        <i class="fa-solid fa-utensils text-indigo-500 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-[11px] text-slate-400 font-medium">{{ summary.meal_calories.Dinner|int }} kcal</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">Dinner</p>
+                    <span class="text-[10px] text-slate-400 group-hover:text-indigo-600">+ Add Item</span>
+                </button>
+
+                <button onclick="openLogModal('Snacks')" class="p-3 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 border border-slate-200/80 rounded-xl text-left transition group">
+                    <div class="flex items-center justify-between mb-1">
+                        <i class="fa-solid fa-apple-whole text-rose-500 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-[11px] text-slate-400 font-medium">{{ summary.meal_calories.Snacks|int }} kcal</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">Snacks</p>
+                    <span class="text-[10px] text-slate-400 group-hover:text-rose-600">+ Add Item</span>
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <a href="{{ url_for('catalog') }}" class="text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-list-ul"></i> Browse Food Item Catalog &rarr;
+                </a>
+                <a href="{{ url_for('analytics') }}" class="text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-chart-line"></i> View Weekly Trends &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Meals Breakdown Section -->
+    <div class="space-y-4">
+        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span>Today's Meal Breakdown</span>
+            <span class="text-xs font-normal text-slate-400">({{ summary.meals|length }} logged)</span>
+        </h2>
+
+        {% for meal_cat in ['Breakfast', 'Lunch', 'Dinner', 'Snacks'] %}
+            {% set items = summary.categorized[meal_cat] %}
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <!-- Meal Header -->
+                <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                            {% if meal_cat == 'Breakfast' %}bg-amber-100 text-amber-600
+                            {% elif meal_cat == 'Lunch' %}bg-emerald-100 text-emerald-600
+                            {% elif meal_cat == 'Dinner' %}bg-indigo-100 text-indigo-600
+                            {% else %}bg-rose-100 text-rose-600{% endif %}">
+                            {% if meal_cat == 'Breakfast' %}<i class="fa-solid fa-mug-hot"></i>
+                            {% elif meal_cat == 'Lunch' %}<i class="fa-solid fa-bowl-rice"></i>
+                            {% elif meal_cat == 'Dinner' %}<i class="fa-solid fa-utensils"></i>
+                            {% else %}<i class="fa-solid fa-apple-whole"></i>{% endif %}
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">{{ meal_cat }}</h3>
+                            <span class="text-xs text-slate-400">{{ items|length }} item{% if items|length != 1 %}s{% endif %}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm font-bold text-slate-700">
+                            {{ summary.meal_calories[meal_cat]|int }} <span class="text-xs font-normal text-slate-400">kcal</span>
+                        </span>
+                        <button onclick="openLogModal('{{ meal_cat }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg shadow-2xs transition">
+                            <i class="fa-solid fa-plus text-emerald-600"></i> Add Food
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Meal Items List -->
+                {% if items %}
+                    <div class="divide-y divide-slate-100">
+                        {% for item in items %}
+                            <div class="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition">
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-sm font-semibold text-slate-900 truncate">{{ item.name }}</h4>
+                                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ item.category }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+                                        <span>{{ item.servings }} serving{% if item.servings != 1 %}s{% endif %} ({{ (item.serving_size * item.servings)|round(1) }} {{ item.serving_unit }})</span>
+                                        <span>&bull;</span>
+                                        <span class="text-indigo-600 font-medium">P: {{ item.total_protein|round(1) }}g</span>
+                                        <span class="text-amber-600 font-medium">C: {{ item.total_carbs|round(1) }}g</span>
+                                        <span class="text-rose-600 font-medium">F: {{ item.total_fat|round(1) }}g</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4">
+                                    <span class="text-sm font-bold text-slate-800">
+                                        {{ item.total_calories|round(1) }} <span class="text-xs font-normal text-slate-400">kcal</span>
+                                    </span>
+                                    <button onclick="deleteMeal({{ item.meal_id }})" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Remove Item">
+                                        <i class="fa-regular fa-trash-can text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="px-5 py-6 text-center text-slate-400">
+                        <p class="text-xs">No food items logged for {{ meal_cat|lower }} yet.</p>
+                        <button onclick="openLogModal('{{ meal_cat }}')" class="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                            + Log food for {{ meal_cat }}
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ================= MODAL: ADD FOOD TO MEAL ================= -->
+<div id="logMealModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transition-all transform scale-100">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Log Food to Meal</h3>
+                    <p class="text-xs text-slate-400">Select an item from the catalog</p>
+                </div>
+            </div>
+            <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="logMealForm" onsubmit="handleMealSubmit(event)" class="mt-4 space-y-4">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+
+            <!-- Meal Type Selector -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Meal Category</label>
+                <div class="grid grid-cols-4 gap-2">
+                    {% for mtype in ['Breakfast', 'Lunch', 'Dinner', 'Snacks'] %}
+                        <label class="cursor-pointer">
+                            <input type="radio" name="meal_type" value="{{ mtype }}" class="peer sr-only" {% if mtype == 'Breakfast' %}checked{% endif %}>
+                            <div class="p-2 text-center rounded-xl border border-slate-200 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                                {{ mtype }}
+                            </div>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Food Item Dropdown / Search -->
+            <div>
+                <label for="foodSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Food Item</label>
+                <div class="relative">
+                    <select id="foodSelect" name="food_id" required onchange="updateServingPreview()"
+                        class="block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="" disabled selected>-- Choose a food item --</option>
+                        {% for f in foods %}
+                            <option value="{{ f.id }}" 
+                                    data-cals="{{ f.calories }}"
+                                    data-p="{{ f.protein }}"
+                                    data-c="{{ f.carbs }}"
+                                    data-f="{{ f.fat }}"
+                                    data-size="{{ f.serving_size }}"
+                                    data-unit="{{ f.serving_unit }}"
+                                    data-name="{{ f.name }}">
+                                {{ f.name }} ({{ f.category }}) — {{ f.calories|int }} kcal / {{ f.serving_size }}{{ f.serving_unit }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-[11px] text-slate-400">Can't find an item?</span>
+                    <a href="{{ url_for('catalog') }}" class="text-[11px] font-semibold text-emerald-600 hover:underline">+ Add Custom Food to Catalog</a>
+                </div>
+            </div>
+
+            <!-- Servings Input -->
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="servingsInput" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Number of Servings</label>
+                    <span id="servingUnitHint" class="text-xs text-slate-400">Default: 1.0 serving</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="servingsInput" name="servings" step="0.25" min="0.1" max="50" value="1.0" required oninput="updateServingPreview()"
+                        class="block w-full py-2 px-3 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <div class="flex gap-1">
+                        <button type="button" onclick="setServings(0.5)" class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg">0.5</button>
+                        <button type="button" onclick="setServings(1.0)" class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg">1.0</button>
+                        <button type="button" onclick="setServings(2.0)" class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg">2.0</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Macro Preview Pill -->
+            <div id="nutritionPreviewBox" class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl hidden">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Intake Preview</span>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-white p-2 rounded-lg border border-slate-100">
+                        <span id="prevCals" class="block text-sm font-extrabold text-emerald-600">0</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Calories</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-100">
+                        <span id="prevProtein" class="block text-sm font-bold text-indigo-600">0g</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Protein</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-100">
+                        <span id="prevCarbs" class="block text-sm font-bold text-amber-600">0g</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Carbs</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-100">
+                        <span id="prevFat" class="block text-sm font-bold text-rose-600">0g</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Fat</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeLogModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition">
+                    Cancel
+                </button>
+                <button type="submit" id="submitLogBtn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-check"></i> Record Meal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openLogModal(mealType) {
+    const radios = document.getElementsByName('meal_type');
+    for (let r of radios) {
+        if (r.value === mealType) r.checked = true;
+    }
+    document.getElementById('logMealModal').classList.remove('hidden');
+    updateServingPreview();
+}
+
+function closeLogModal() {
+    document.getElementById('logMealModal').classList.add('hidden');
+}
+
+function setServings(val) {
+    document.getElementById('servingsInput').value = val;
+    updateServingPreview();
+}
+
+function updateServingPreview() {
+    const sel = document.getElementById('foodSelect');
+    const opt = sel.options[sel.selectedIndex];
+    const previewBox = document.getElementById('nutritionPreviewBox');
+    
+    if (!opt || !opt.dataset.cals) {
+        previewBox.classList.add('hidden');
+        return;
+    }
+
+    const servings = parseFloat(document.getElementById('servingsInput').value) || 1.0;
+    const cals = (parseFloat(opt.dataset.cals) * servings).toFixed(1);
+    const p = (parseFloat(opt.dataset.p) * servings).toFixed(1);
+    const c = (parseFloat(opt.dataset.c) * servings).toFixed(1);
+    const f = (parseFloat(opt.dataset.f) * servings).toFixed(1);
+    const unit = opt.dataset.unit || 'g';
+    const size = (parseFloat(opt.dataset.size) * servings).toFixed(1);
+
+    document.getElementById('prevCals').innerText = cals + ' kcal';
+    document.getElementById('prevProtein').innerText = p + 'g';
+    document.getElementById('prevCarbs').innerText = c + 'g';
+    document.getElementById('prevFat').innerText = f + 'g';
+    document.getElementById('servingUnitHint').innerText = `${size} ${unit} total`;
+
+    previewBox.classList.remove('hidden');
+}
+
+async function handleMealSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('submitLogBtn');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+    try {
+        const res = await fetch('/api/meals/log', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeLogModal();
+            setTimeout(() => window.location.reload(), 400);
+        } else {
+            showToast(data.message || 'Error recording meal', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection error. Please try again.', 'danger');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Record Meal';
+    }
+}
+
+async function deleteMeal(mealId) {
+    if (!confirm('Are you sure you want to remove this logged food item?')) return;
+
+    try {
+        const res = await fetch(`/api/meals/delete/${mealId}`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Food entry removed', 'info');
+            setTimeout(() => window.location.reload(), 300);
+        } else {
+            showToast(data.message || 'Could not delete entry', 'danger');
+        }
+    } catch (err) {
+        showToast('Connection error', 'danger');
+    }
+}
+
+async function updateWater(dateStr, delta) {
+    try {
+        const res = await fetch('/api/water/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: dateStr, delta: delta })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('waterCountBadge').innerText = `${data.glasses} / ${data.goal_glasses}`;
+            // Re-render glass icons
+            const container = document.getElementById('waterGlassesContainer');
+            let glassesHtml = '';
+            for (let i = 1; i <= data.goal_glasses; i++) {
+                const filled = i <= data.glasses;
+                glassesHtml += `
+                    <div class="water-glass w-7 h-9 rounded-b-md border-2 ${filled ? 'border-sky-500 bg-sky-400/80 text-white' : 'border-slate-300 bg-slate-50 text-slate-300'} flex items-center justify-center text-[10px] font-bold transition-all duration-200">
+                        <i class="fa-solid fa-droplet text-[9px]"></i>
+                    </div>
+                `;
+            }
+            container.innerHTML = glassesHtml;
+            showToast(`Hydration updated: ${data.glasses} glasses logged`, 'info');
+        }
+    } catch (err) {
+        showToast('Failed to update water', 'danger');
+    }
+}
+</script>
+{% endblock %}

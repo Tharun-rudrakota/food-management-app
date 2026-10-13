@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - FreshPantry{% endblock %}
+
+{% block content %}
+<div class="min-h-[85vh] flex flex-col justify-center py-10 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <div class="w-16 h-16 rounded-2xl bg-[#14392a] flex items-center justify-center text-[#f3ba2f] shadow-lg shadow-emerald-900/10 mx-auto mb-4">
+            <i class="fa-solid fa-user-plus text-2xl"></i>
+        </div>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">Create your account</h2>
+        <p class="mt-2 text-sm text-slate-600">
+            Already have an account? <a href="{{ url_for('login') }}" class="font-bold text-[#157a4e] hover:underline">Sign in here</a>
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-6 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-100 sm:px-10">
+            <form action="{{ url_for('register') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Username *</label>
+                    <input id="username" name="username" type="text" required
+                        class="mt-1 block w-full py-2.5 px-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        placeholder="john_doe">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Email Address *</label>
+                    <input id="email" name="email" type="email" required
+                        class="mt-1 block w-full py-2.5 px-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        placeholder="john@example.com">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Password *</label>
+                    <input id="password" name="password" type="password" required minlength="6"
+                        class="mt-1 block w-full py-2.5 px-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        placeholder="••••••••">
+                </div>
+
+                <div>
+                    <label for="confirm_password" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Confirm Password *</label>
+                    <input id="confirm_password" name="confirm_password" type="password" required minlength="6"
+                        class="mt-1 block w-full py-2.5 px-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        placeholder="••••••••">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit"
+                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-[#059669] hover:bg-[#047857] transition">
+                        Register & Get Started
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
