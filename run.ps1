@@ -15,9 +15,6 @@ try {
 }
 
 Write-Host "Launching server on http://127.0.0.1:5000 ..." -ForegroundColor Yellow
-Write-Host "Demo Credentials:" -ForegroundColor Magenta
-Write-Host "  Username: demo" -ForegroundColor White
-Write-Host "  Password: demo123" -ForegroundColor White
 Write-Host ""
 Write-Host "Opening browser in 2 seconds..." -ForegroundColor Gray
 

@@ -18,11 +18,10 @@ def _connect_raw():
     return conn
 
 def get_db_connection():
-    """Returns a SQLite connection with row factory enabled. Auto-seeds if missing."""
+    """Returns a SQLite connection with row factory enabled. Initializes schema if missing."""
     db_path = get_db_path()
     if not os.path.exists(db_path):
         init_db()
-        seed_data()
     return _connect_raw()
 
 def init_db():
@@ -91,70 +90,10 @@ def get_item_status(expiry_date_str, today=None):
         return 'Fresh'
 
 def seed_data():
-    """Seeds demo user and initial food inventory items if empty."""
-    conn = _connect_raw()
-    cursor = conn.cursor()
-
-    # Create demo user if not exists
-    cursor.execute("SELECT id FROM users WHERE username = 'demo'")
-    user = cursor.fetchone()
-    if not user:
-        hashed_pw = generate_password_hash('demo123')
-        cursor.execute("""
-            INSERT INTO users (username, email, password_hash)
-            VALUES (?, ?, ?)
-        """, ('demo', 'demo@foodnest.com', hashed_pw))
-        user_id = cursor.lastrowid
-    else:
-        user_id = user['id']
-
-    # Seed sample food inventory for demo user if none exists
-    cursor.execute("SELECT COUNT(*) as count FROM food_inventory WHERE user_id = ?", (user_id,))
-    if cursor.fetchone()['count'] == 0:
-        today = date.today()
-
-        sample_foods = [
-            # Fresh Items (> 7 days remaining)
-            ("Farm Fresh Eggs", "Dairy & Eggs", 12.0, "pcs", "Fridge", (today - timedelta(days=2)).isoformat(), (today + timedelta(days=14)).isoformat(), "Organic brown eggs"),
-            ("Basmati White Rice", "Grains & Pasta", 2.0, "kg", "Pantry", (today - timedelta(days=10)).isoformat(), (today + timedelta(days=120)).isoformat(), "Sealed bag in pantry"),
-            ("Greek Yogurt", "Dairy & Eggs", 500.0, "g", "Fridge", (today - timedelta(days=1)).isoformat(), (today + timedelta(days=10)).isoformat(), "Plain whole milk yogurt"),
-            ("Chicken Breast Fillets", "Meat & Seafood", 800.0, "g", "Freezer", (today - timedelta(days=3)).isoformat(), (today + timedelta(days=45)).isoformat(), "Vacuum sealed in freezer"),
-            ("Rolled Oats", "Grains & Pasta", 1.0, "kg", "Pantry", (today - timedelta(days=7)).isoformat(), (today + timedelta(days=90)).isoformat(), "Airtight container"),
-            ("Extra Virgin Olive Oil", "Condiments & Oils", 1.0, "bottle", "Pantry", (today - timedelta(days=15)).isoformat(), (today + timedelta(days=200)).isoformat(), "Dark glass bottle"),
-            ("Crisp Fuji Apples", "Fruits", 6.0, "pcs", "Fridge", (today - timedelta(days=2)).isoformat(), (today + timedelta(days=12)).isoformat(), "Crisper drawer"),
-
-            # Expiring Soon Items (within 0 - 7 days)
-            ("Whole Fresh Milk", "Dairy & Eggs", 1.0, "L", "Fridge", (today - timedelta(days=5)).isoformat(), (today + timedelta(days=2)).isoformat(), "Opened bottle, use soon"),
-            ("Fresh Baby Spinach", "Vegetables", 250.0, "g", "Fridge", (today - timedelta(days=4)).isoformat(), (today + timedelta(days=3)).isoformat(), "Use for salad or smoothie"),
-            ("Whole Wheat Bread", "Bakery", 1.0, "loaf", "Pantry", (today - timedelta(days=4)).isoformat(), (today + timedelta(days=1)).isoformat(), "Soft bread, eat within 24h"),
-            ("Sweet Strawberries", "Fruits", 1.0, "pack", "Fridge", (today - timedelta(days=3)).isoformat(), (today + timedelta(days=2)).isoformat(), "Check for freshness"),
-
-            # Expired Items (< 0 days)
-            ("Sliced Cheddar Cheese", "Dairy & Eggs", 200.0, "g", "Fridge", (today - timedelta(days=14)).isoformat(), (today - timedelta(days=2)).isoformat(), "Past best by date"),
-            ("Canned Tomato Sauce", "Canned Goods", 1.0, "can", "Pantry", (today - timedelta(days=60)).isoformat(), (today - timedelta(days=5)).isoformat(), "Expired last week")
-        ]
-
-        cursor.executemany("""
-            INSERT INTO food_inventory (user_id, name, category, quantity, unit, storage_location, purchase_date, expiry_date, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, [(user_id, *f) for f in sample_foods])
-
-        # Seed sample daily consumption
-        sample_consumptions = [
-            (user_id, None, "Farm Fresh Eggs", 2.0, "pcs", today.isoformat(), "Breakfast", "Made scrambled eggs"),
-            (user_id, None, "Whole Fresh Milk", 250.0, "ml", today.isoformat(), "Breakfast", "With coffee"),
-            (user_id, None, "Crisp Fuji Apples", 1.0, "pcs", today.isoformat(), "Snacks", "Afternoon healthy snack")
-        ]
-        cursor.executemany("""
-            INSERT INTO daily_consumption (user_id, food_id, food_name, quantity_consumed, unit, date_consumed, meal_type, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, sample_consumptions)
-
-    conn.commit()
-    conn.close()
+    """No-op: Demo seeding removed. Users register their own accounts."""
+    pass
 
 if __name__ == '__main__':
-    print("Initializing FoodNest database...")
+    print("Initializing FreshPantry database...")
     init_db()
-    seed_data()
-    print("FoodNest database ready!")
+    print("FreshPantry database ready!")

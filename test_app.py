@@ -1,40 +1,53 @@
 import unittest
 import json
 from app import app
-from database import get_db_connection, init_db, seed_data
+from database import get_db_connection, init_db
 
 class FoodNestAppTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        init_db()
+
     def setUp(self):
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
         self.client = app.test_client()
 
-    def test_01_database_and_seed_data(self):
-        """Verify DB tables and initial sample food inventory."""
-        conn = get_db_connection()
-        user = conn.execute("SELECT * FROM users WHERE username = 'demo'").fetchone()
-        self.assertIsNotNone(user, "Demo user should exist in DB")
+    def test_01_user_registration(self):
+        """Verify new user registration flow."""
+        res = self.client.post('/register', data={
+            'username': 'testuser',
+            'email': 'test@freshpantry.com',
+            'password': 'password123',
+            'confirm_password': 'password123'
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
 
-        inv_count = conn.execute("SELECT COUNT(*) as count FROM food_inventory WHERE user_id = ?", (user['id'],)).fetchone()['count']
-        self.assertGreaterEqual(inv_count, 10, "Should have seeded food inventory items")
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE username = 'testuser'").fetchone()
+        self.assertIsNotNone(user, "Registered user should exist in DB")
         conn.close()
 
     def test_02_authentication(self):
-        """Test sign in with demo credentials."""
+        """Test sign in with registered user credentials."""
         # Incorrect password
-        res = self.client.post('/login', data={'username': 'demo', 'password': 'wrong'}, follow_redirects=True)
+        res = self.client.post('/login', data={'username': 'testuser', 'password': 'wrongpassword'}, follow_redirects=True)
         self.assertIn(b'Invalid username/email or password', res.data)
 
         # Correct password
-        res = self.client.post('/login', data={'username': 'demo', 'password': 'demo123'}, follow_redirects=True)
+        res = self.client.post('/login', data={'username': 'testuser', 'password': 'password123'}, follow_redirects=True)
         self.assertIn(b'Keep Food Fresh', res.data)
         self.assertIn(b'Total Food Items', res.data)
 
     def test_03_home_dashboard_counters(self):
         """Verify home page loads the 4 metric cards."""
+        conn = get_db_connection()
+        user = conn.execute("SELECT id FROM users WHERE username = 'testuser'").fetchone()
+        conn.close()
+
         with self.client.session_transaction() as sess:
-            sess['user_id'] = 1
-            sess['username'] = 'demo'
+            sess['user_id'] = user['id']
+            sess['username'] = 'testuser'
 
         res = self.client.get('/home')
         self.assertEqual(res.status_code, 200)
@@ -47,9 +60,13 @@ class FoodNestAppTests(unittest.TestCase):
 
     def test_04_inventory_crud(self):
         """Test adding, editing, and deleting inventory items."""
+        conn = get_db_connection()
+        user = conn.execute("SELECT id FROM users WHERE username = 'testuser'").fetchone()
+        conn.close()
+
         with self.client.session_transaction() as sess:
-            sess['user_id'] = 1
-            sess['username'] = 'demo'
+            sess['user_id'] = user['id']
+            sess['username'] = 'testuser'
 
         # Add item
         res = self.client.post('/api/inventory/add', data={
@@ -85,37 +102,48 @@ class FoodNestAppTests(unittest.TestCase):
 
     def test_05_daily_food_consumption(self):
         """Test consuming an inventory item and daily usage logging."""
-        with self.client.session_transaction() as sess:
-            sess['user_id'] = 1
-            sess['username'] = 'demo'
-
         conn = get_db_connection()
-        item = conn.execute("SELECT id, quantity FROM food_inventory WHERE user_id = 1 AND name = 'Farm Fresh Eggs'").fetchone()
+        user = conn.execute("SELECT id FROM users WHERE username = 'testuser'").fetchone()
+
+        # Insert a food item to consume
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO food_inventory (user_id, name, category, quantity, unit, storage_location, purchase_date, expiry_date, notes)
+            VALUES (?, 'Organic Apples', 'Fruits', 6.0, 'pcs', 'Fridge', '2026-10-13', '2026-10-20', 'Fresh apples')
+        """, (user['id'],))
+        conn.commit()
+        item_id = cursor.lastrowid
         conn.close()
 
-        initial_qty = item['quantity']
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user['id']
+            sess['username'] = 'testuser'
 
-        # Consume 2 eggs
-        res = self.client.post(f'/api/inventory/consume/{item["id"]}', data={
+        # Consume 2 apples
+        res = self.client.post(f'/api/inventory/consume/{item_id}', data={
             'quantity': 2,
             'meal_type': 'Breakfast',
             'date': '2026-10-13',
-            'notes': 'Boiled eggs'
+            'notes': 'Morning snack'
         })
         data = json.loads(res.data)
         self.assertTrue(data['success'])
-        self.assertEqual(data['remaining_quantity'], initial_qty - 2)
+        self.assertEqual(data['remaining_quantity'], 4.0)
 
         # Check daily usage page
         res_usage = self.client.get('/daily-usage?date=2026-10-13')
         self.assertEqual(res_usage.status_code, 200)
-        self.assertIn(b'Farm Fresh Eggs', res_usage.data)
+        self.assertIn(b'Organic Apples', res_usage.data)
 
     def test_06_nav_routes(self):
         """Verify About, Contact, and Profile pages."""
+        conn = get_db_connection()
+        user = conn.execute("SELECT id FROM users WHERE username = 'testuser'").fetchone()
+        conn.close()
+
         with self.client.session_transaction() as sess:
-            sess['user_id'] = 1
-            sess['username'] = 'demo'
+            sess['user_id'] = user['id']
+            sess['username'] = 'testuser'
 
         res_about = self.client.get('/about')
         self.assertEqual(res_about.status_code, 200)
@@ -127,7 +155,7 @@ class FoodNestAppTests(unittest.TestCase):
 
         res_profile = self.client.get('/profile')
         self.assertEqual(res_profile.status_code, 200)
-        self.assertIn(b'demo', res_profile.data)
+        self.assertIn(b'testuser', res_profile.data)
 
 if __name__ == '__main__':
     unittest.main()

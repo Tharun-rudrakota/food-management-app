@@ -15,21 +15,6 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <!-- Demo Credentials Pill -->
-        <div class="mb-5 p-4 bg-[#def3e5] border border-[#bce8cb] rounded-2xl flex items-center justify-between text-xs text-[#137a40] shadow-2xs">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-key text-[#157a4e] text-sm"></i>
-                <div>
-                    <span class="font-bold">Instant Demo Account:</span>
-                    <span class="font-mono bg-white/80 px-1.5 py-0.5 rounded ml-1">demo</span> / 
-                    <span class="font-mono bg-white/80 px-1.5 py-0.5 rounded">demo123</span>
-                </div>
-            </div>
-            <button type="button" onclick="fillDemo()" class="bg-[#157a4e] hover:bg-[#10633f] text-white font-semibold px-2.5 py-1 rounded-lg text-xs transition">
-                Autofill
-            </button>
-        </div>
-
         <div class="bg-white py-8 px-6 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-100 sm:px-10">
             <form action="{{ url_for('login') }}" method="POST" class="space-y-5">
                 <div>
@@ -40,7 +25,7 @@
                         </div>
                         <input id="username" name="username" type="text" required autofocus
                             class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                            placeholder="demo">
+                            placeholder="Enter your username or email">
                     </div>
                 </div>
 
@@ -66,11 +51,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function fillDemo() {
-    document.getElementById('username').value = 'demo';
-    document.getElementById('password').value = 'demo123';
-}
-</script>
 {% endblock %}

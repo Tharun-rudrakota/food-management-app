@@ -24,8 +24,7 @@ Built with an intuitive, clean interface:
 
 ### 1. User Authentication & Credentials
 - **Sign In & Sign Up** with PBKDF2 secure password hashing (`werkzeug.security`).
-- **Instant Demo Account**: Pre-seeded `demo` / `demo123` with 1-click autofill on the login screen.
-- Private inventories and consumption logs per user.
+- Private personal inventories and daily consumption logs per user account.
 
 ### 2. Food Item Management (Inventory)
 - Add, Edit, and Delete food items.
@@ -63,9 +62,8 @@ Open your browser at:
 http://127.0.0.1:5000
 ```
 
-### 🔑 Demo Login Credentials
-- **Username:** `demo`
-- **Password:** `demo123`
+### 🔑 User Accounts
+Create your account directly from the **Sign Up** page (`/register`), then sign in with your username and password.
 
 ---
 
@@ -78,7 +76,7 @@ FreshPantry is configured for 1-click deployment on [Vercel](https://vercel.com)
 - `api/index.py`: Serverless WSGI entrypoint.
 - `requirements.txt`: Python package specifications.
 - `.vercelignore` & `.gitignore`: Keeps the deployment bundle clean.
-- `database.py`: Automatically detects Vercel's serverless environment and mounts SQLite in `/tmp` with auto-seeding.
+- `database.py`: Automatically detects Vercel's serverless environment and mounts SQLite in `/tmp` with automatic schema initialization.
 
 ### Option 1: Deploy via GitHub (Recommended — 2 Minutes)
 1. Initialize git and push this folder to your GitHub account:

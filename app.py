@@ -7,7 +7,7 @@ from flask import (
     flash, session, jsonify
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from database import get_db_connection, init_db, seed_data, get_item_status
+from database import get_db_connection, init_db, get_item_status
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(
@@ -20,7 +20,6 @@ app.secret_key = os.environ.get('SECRET_KEY', 'freshpantry-secret-key-2026-secur
 # Ensure DB is created on startup
 with app.app_context():
     init_db()
-    seed_data()
 
 def login_required(f):
     @wraps(f)
